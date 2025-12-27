@@ -1,0 +1,14 @@
+{
+    "tickers": "TSLA,SPY,SMH,QQQ,NVDA,MSFT,META,AMD,AAPL, pltr",
+    "timeframe": "3 Minutes",
+    "num_cols": 3,
+    "auto_refresh": true,
+    "refresh_interval": 30,
+    "mtf_tf1": "Daily",
+    "mtf_tf2": "15 Minutes",
+    "mtf_tf3": "3 Minutes",
+    "chart_height": 151,
+    "sort_by": "Ticker",
+    "sort_order": "ASC",
+    "finviz_cookie": ""
+}

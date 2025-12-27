@@ -1,0 +1,5 @@
+[server]
+port = 8999
+headless = false
+enableCORS = false
+enableXsrfProtection = false
