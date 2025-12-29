@@ -4,9 +4,13 @@ import datetime
 import json
 import os
 import requests
+import csv
+import pandas as pd
+from io import StringIO
 from bs4 import BeautifulSoup
 
 SETTINGS_FILE = "settings.json"
+TICKER_LISTS_FILE = "ticker_lists.json"
 
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
@@ -16,6 +20,24 @@ def load_settings():
         except Exception as e:
             st.error(f"Error loading settings: {e}")
     return {}
+
+def load_ticker_lists():
+    """Load saved ticker lists from file"""
+    if os.path.exists(TICKER_LISTS_FILE):
+        try:
+            with open(TICKER_LISTS_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            st.sidebar.error(f"Error loading ticker lists: {e}")
+    return {}
+
+def save_ticker_lists(ticker_lists):
+    """Save ticker lists to file"""
+    try:
+        with open(TICKER_LISTS_FILE, "w") as f:
+            json.dump(ticker_lists, f, indent=4)
+    except Exception as e:
+        st.sidebar.error(f"Error saving ticker lists: {e}")
 
 def save_settings(settings):
     try:
@@ -31,13 +53,13 @@ def auto_save_settings():
         "timeframe": st.session_state.get("grid_tf", "3 Minutes"),
         "num_cols": st.session_state.get("num_cols", 2),
         "auto_refresh": st.session_state.get("auto_refresh", True),
-        "refresh_interval": st.session_state.get("refresh_interval", 30),
+        "refresh_interval": st.session_state.get("refresh_interval", 10),
         "mtf_tf1": st.session_state.get("mtf_tf1", "Daily"),
         "mtf_tf2": st.session_state.get("mtf_tf2", "15 Minutes"),
         "mtf_tf3": st.session_state.get("mtf_tf3", "3 Minutes"),
         "chart_height": st.session_state.get("chart_height", 350),
-        "sort_by": st.session_state.get("sort_by", "Ticker"),
-        "sort_order": st.session_state.get("sort_order", "ASC"),
+        "sort_by": st.session_state.get("sort_by", "Perf 30min"),
+        "sort_order": st.session_state.get("sort_order", "DESC"),
         "finviz_cookie": st.session_state.get("finviz_cookie", ""),
         "show_metrics": st.session_state.get("show_metrics", True)
     }
@@ -134,73 +156,82 @@ if "requests_session" not in st.session_state:
 def fetch_sorted_tickers(tickers, sort_option):
     tickers = clean_tickers(tickers)
     ticker_str = ",".join(tickers)
-    
-    cookie = st.session_state.get("finviz_cookie", "").strip()
-    base_url = "elite.finviz.com" if cookie else "finviz.com"
-    
+
+    api_token = st.session_state.get("finviz_cookie", "").strip()
+
     # Updated column IDs based on current Finviz Custom view (v=152)
-    # 0:No, 1:Ticker, 70:Perf 10m, 71:Perf 15m, 72:Perf 30m, 89:SMA20, 90:SMA50, 99:RSI, 121:Price, 118:Change
-    col_str = "0,1,70,71,72,89,90,99,121,118"
-    url = f"https://{base_url}/screener.ashx?v=152&c={col_str}&o={sort_option}&t={ticker_str}"
-    
+    # 0:No, 1:Ticker, 90:Perf 1m, 94:Perf 10m, 95:Perf 15m, 96:Perf 30m, 52:SMA20, 65:Price, 66:Change
+    col_str = "0,1,90,94,95,96,52,65,66"
+
+    # Use export API with auth token for Elite features
+    if api_token:
+        url = f"https://elite.finviz.com/export.ashx?v=152&c={col_str}&o={sort_option}&t={ticker_str}&auth={api_token}"
+    else:
+        url = f"https://finviz.com/screener.ashx?v=152&c={col_str}&o={sort_option}&t={ticker_str}"
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
     }
-    if cookie:
-        headers['Cookie'] = cookie
     
     max_retries = 2
     for attempt in range(max_retries + 1):
         try:
             # Increased timeout to 20s
             response = st.session_state["requests_session"].get(url, headers=headers, timeout=20)
-            if response.status_code != 200:
-                # Fallback to standard view if custom view fails
-                url_fallback = f"https://finviz.com/screener.ashx?v=111&o={sort_option}&t={ticker_str}"
-                response = requests.get(url_fallback, headers=headers, timeout=20)
-                
+
             if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
                 extracted = []
-            
-            # Find the screener rows using modern and legacy selectors
-            rows = soup.select('tr.styled-row, tr.screener-body-row-nw, tr.screener-body-row-nb')
-            if not rows:
-                # Generic fallback for row extraction
-                rows = soup.find_all('tr', valign=['top', 'middle'])
-            
-            for row in rows:
-                tds = row.find_all('td')
-                if len(tds) >= 2:
-                    # The ticker is almost always in the second column (index 1)
-                    # We look for the first link in that cell
-                    ticker_a = tds[1].find('a')
-                    if ticker_a:
-                        ticker_text = ticker_a.text.strip().upper()
-                        # Simple validation: tickers are 1-5 chars, mostly letters
-                        if ticker_text.isalpha() and 1 <= len(ticker_text) <= 6:
-                            if ticker_text not in extracted:
-                                extracted.append(ticker_text)
-            
-            # Special case: If row parsing failed entirely, try a global a.tab-link search
-            # but limit it to uppercase short strings to filter out navigation links
-            if not extracted:
-                for a in soup.select('a.tab-link, a.screener-link-primary'):
-                    text = a.text.strip().upper()
-                    if text.isalpha() and 1 <= len(text) <= 6:
-                        if text not in extracted:
-                            extracted.append(text)
-            
-            # Preserve original tickers if they weren't found in the response
-            # (e.g. if some tickers were invalid for Finviz)
-            sorted_tickers = [t for t in extracted if t in tickers]
-            for t in tickers:
-                if t not in sorted_tickers:
-                    sorted_tickers.append(t)
-            return sorted_tickers
-            
-            # If status not 200, retry or fail
+
+                # Check if response is CSV (from export API) or HTML (from screener)
+                if api_token and 'export.ashx' in url:
+                    # Parse CSV response
+                    csv_reader = csv.reader(StringIO(response.text))
+                    rows_data = list(csv_reader)
+                    if len(rows_data) > 1:  # Skip header row
+                        for row in rows_data[1:]:
+                            if len(row) >= 2:
+                                ticker_text = row[1].strip().upper()
+                                if ticker_text and ticker_text in tickers:
+                                    if ticker_text not in extracted:
+                                        extracted.append(ticker_text)
+                else:
+                    # Parse HTML response
+                    soup = BeautifulSoup(response.text, 'html.parser')
+
+                    # Find the screener rows using modern and legacy selectors
+                    rows = soup.select('tr.styled-row, tr.screener-body-row-nw, tr.screener-body-row-nb')
+                    if not rows:
+                        # Generic fallback for row extraction
+                        rows = soup.find_all('tr', valign=['top', 'middle'])
+
+                    for row in rows:
+                        tds = row.find_all('td')
+                        if len(tds) >= 2:
+                            # The ticker is almost always in the second column (index 1)
+                            ticker_a = tds[1].find('a')
+                            if ticker_a:
+                                ticker_text = ticker_a.text.strip().upper()
+                                # Simple validation: tickers are 1-5 chars, mostly letters
+                                if ticker_text.isalpha() and 1 <= len(ticker_text) <= 6:
+                                    if ticker_text not in extracted:
+                                        extracted.append(ticker_text)
+
+                    # Special case: If row parsing failed entirely, try a global a.tab-link search
+                    if not extracted:
+                        for a in soup.select('a.tab-link, a.screener-link-primary'):
+                            text = a.text.strip().upper()
+                            if text.isalpha() and 1 <= len(text) <= 6:
+                                if text not in extracted:
+                                    extracted.append(text)
+
+                # Preserve original tickers if they weren't found in the response
+                sorted_tickers = [t for t in extracted if t in tickers]
+                for t in tickers:
+                    if t not in sorted_tickers:
+                        sorted_tickers.append(t)
+                return sorted_tickers
+
         except (requests.exceptions.RequestException, ConnectionResetError) as e:
             if attempt < max_retries:
                 time.sleep(2 * (attempt + 1))
@@ -213,21 +244,23 @@ def fetch_ticker_metrics(tickers):
     tickers = clean_tickers(tickers)
     if not tickers:
         return {}
-    
+
     ticker_str = ",".join(tickers)
-    cookie = st.session_state.get("finviz_cookie", "").strip()
-    base_url = "elite.finviz.com" if cookie else "finviz.com"
-    
-    col_str = "0,1,70,71,72,89,90,99,121,118"
-    url = f"https://{base_url}/screener.ashx?v=152&c={col_str}&t={ticker_str}"
-    
+    api_token = st.session_state.get("finviz_cookie", "").strip()
+
+    col_str = "0,1,90,94,95,96,52,65,66"
+
+    # Use export API with auth token for Elite features
+    if api_token:
+        url = f"https://elite.finviz.com/export.ashx?v=152&c={col_str}&t={ticker_str}&auth={api_token}"
+    else:
+        url = f"https://finviz.com/screener.ashx?v=152&c={col_str}&t={ticker_str}"
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
     }
-    if cookie:
-        headers['Cookie'] = cookie
-    
+
     metrics_data = {}
     max_retries = 2
     for attempt in range(max_retries + 1):
@@ -235,41 +268,61 @@ def fetch_ticker_metrics(tickers):
             # Increased timeout to 20s
             response = st.session_state["requests_session"].get(url, headers=headers, timeout=20)
             if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                # Find the screener rows using modern and legacy selectors
-                rows = soup.select('tr.styled-row, tr.screener-body-row-nw, tr.screener-body-row-nb')
-                if not rows:
-                    rows = soup.find_all('tr', valign=['top', 'middle'])
-                    
-                for row in rows:
-                    tds = row.find_all('td')
-                    if len(tds) >= 10:
-                        # Ticker is in second column (index 1)
-                        ticker_a = tds[1].find('a')
-                        if ticker_a:
-                            ticker = ticker_a.text.strip().upper()
-                            if ticker in tickers:
-                                metrics_data[ticker] = {
-                                    "perf_10m": tds[2].text.strip(),
-                                    "perf_15m": tds[3].text.strip(),
-                                    "perf_30m": tds[4].text.strip(),
-                                    "sma20": tds[5].text.strip(),
-                                    "sma50": tds[6].text.strip(),
-                                    "rsi": tds[7].text.strip(),
-                                    "price": tds[8].text.strip(),
-                                    "change": tds[9].text.strip()
-                                }
-                
+                # Check if response is CSV (from export API) or HTML (from screener)
+                if api_token and 'export.ashx' in url:
+                    # Parse CSV response
+                    csv_reader = csv.reader(StringIO(response.text))
+                    rows_data = list(csv_reader)
+                    if len(rows_data) > 1:  # Skip header row
+                        for row in rows_data[1:]:
+                            if len(row) >= 9:
+                                ticker = row[1].strip().upper()
+                                if ticker in tickers:
+                                    metrics_data[ticker] = {
+                                        "perf_1m": row[2].strip(),
+                                        "perf_10m": row[3].strip(),
+                                        "perf_15m": row[4].strip(),
+                                        "perf_30m": row[5].strip(),
+                                        "sma20": row[6].strip(),
+                                        "price": row[7].strip(),
+                                        "change": row[8].strip()
+                                    }
+                else:
+                    # Parse HTML response
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    # Find the screener rows using modern and legacy selectors
+                    rows = soup.select('tr.styled-row, tr.screener-body-row-nw, tr.screener-body-row-nb')
+                    if not rows:
+                        rows = soup.find_all('tr', valign=['top', 'middle'])
+
+                    for row in rows:
+                        tds = row.find_all('td')
+                        if len(tds) >= 9:
+                            # Ticker is in second column (index 1)
+                            ticker_a = tds[1].find('a')
+                            if ticker_a:
+                                ticker = ticker_a.text.strip().upper()
+                                if ticker in tickers:
+                                    metrics_data[ticker] = {
+                                        "perf_1m": tds[2].text.strip(),
+                                        "perf_10m": tds[3].text.strip(),
+                                        "perf_15m": tds[4].text.strip(),
+                                        "perf_30m": tds[5].text.strip(),
+                                        "sma20": tds[6].text.strip(),
+                                        "price": tds[7].text.strip(),
+                                        "change": tds[8].text.strip()
+                                    }
+
                 if metrics_data:
                     return metrics_data
-            
+
         except (requests.exceptions.RequestException, ConnectionResetError) as e:
             if attempt < max_retries:
                 time.sleep(2 * (attempt + 1))
                 continue
             print(f"Error fetching metrics: {e}")
             break
-            
+
     return metrics_data
 
 # Load initial settings
@@ -281,6 +334,7 @@ st.set_page_config(
     page_title="Finviz Free - Realtime Chart Dashboard",
     page_icon="📈",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # --- Custom CSS for Premium Look ---
@@ -352,9 +406,22 @@ st.markdown(f"""
 
 # --- Sidebar Controls ---
 
-# Initialize session state for tickers
-if "tickers" not in st.session_state:
+# Initialize session state from saved settings
+if "initialized" not in st.session_state:
+    st.session_state["initialized"] = True
     st.session_state["tickers"] = saved_settings.get("tickers", "MSFT,GOOGL,AAPL,SPY,AMZN,SMH")
+    st.session_state["grid_tf"] = saved_settings.get("timeframe", "3 Minutes")
+    st.session_state["num_cols"] = saved_settings.get("num_cols", 2)
+    st.session_state["auto_refresh"] = saved_settings.get("auto_refresh", True)
+    st.session_state["refresh_interval"] = saved_settings.get("refresh_interval", 10)
+    st.session_state["mtf_tf1"] = saved_settings.get("mtf_tf1", "Daily")
+    st.session_state["mtf_tf2"] = saved_settings.get("mtf_tf2", "15 Minutes")
+    st.session_state["mtf_tf3"] = saved_settings.get("mtf_tf3", "3 Minutes")
+    st.session_state["chart_height"] = saved_settings.get("chart_height", 350)
+    st.session_state["sort_by"] = saved_settings.get("sort_by", "Perf 30min")
+    st.session_state["sort_order"] = saved_settings.get("sort_order", "DESC")
+    st.session_state["finviz_cookie"] = saved_settings.get("finviz_cookie", "")
+    st.session_state["show_metrics"] = saved_settings.get("show_metrics", True)
 
 # Callback function to handle automatic sorting
 def handle_sort_change():
@@ -372,6 +439,7 @@ def handle_sort_change():
             sorted_list = sorted(current_tickers, reverse=(order_raw == "DESC"))
             st.session_state["tickers"] = ",".join(sorted_list)
             st.toast(f"Sorted by {selected_label} {order_raw}")
+            auto_save_settings()
         else:
             # Finviz external sort
             finviz_order = sort_options[selected_label]
@@ -386,6 +454,8 @@ def handle_sort_change():
                         st.sidebar.warning("Intraday performance sorting requires a Finviz Elite cookie.")
                 st.session_state["tickers"] = ",".join(sorted_list)
                 st.toast(f"Sorted by {selected_label} {order_raw}")
+                # Save settings after sorting to persist the new order
+                auto_save_settings()
             except Exception as e:
                 st.sidebar.error(f"Sorting failed: {e}")
 
@@ -417,12 +487,107 @@ def handle_etf_load():
         st.session_state["etf_error"] = "Please enter one or more ETF tickers"
 
 
+# Ticker Lists Management
+with st.sidebar.expander("💾 Ticker Lists", expanded=False):
+    # Load all saved ticker lists
+    ticker_lists = load_ticker_lists()
+
+    # Save current list
+    st.markdown("**Save Current List**")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        # Use value parameter to set default, don't modify session_state directly
+        default_name = "" if st.session_state.get("clear_list_name") else st.session_state.get("new_list_name", "")
+        new_list_name = st.text_input("List Name", value=default_name, key="new_list_name", label_visibility="collapsed", placeholder="Enter name...")
+    with col2:
+        if st.button("💾", help="Save current ticker list"):
+            if new_list_name:
+                current_tickers = st.session_state.get("tickers", "")
+                if current_tickers.strip():
+                    ticker_lists[new_list_name] = current_tickers
+                    save_ticker_lists(ticker_lists)
+                    st.toast(f"Saved '{new_list_name}'")
+                    st.session_state["clear_list_name"] = True
+                    st.rerun()
+                else:
+                    st.sidebar.error("No tickers to save")
+            else:
+                st.sidebar.error("Enter a name for the list")
+
+    # Clear the flag after use
+    if st.session_state.get("clear_list_name"):
+        st.session_state["clear_list_name"] = False
+
+    # Load saved list
+    if ticker_lists:
+        st.markdown("**Load Saved List**")
+        selected_list = st.selectbox(
+            "Select a list to load",
+            options=[""] + list(ticker_lists.keys()),
+            key="selected_ticker_list",
+            label_visibility="collapsed"
+        )
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button("Load", disabled=not selected_list, width='stretch'):
+                if selected_list:
+                    st.session_state["tickers"] = ticker_lists[selected_list]
+                    auto_save_settings()
+                    st.toast(f"Loaded '{selected_list}'")
+                    st.rerun()
+
+        with col2:
+            if st.button("Rename", disabled=not selected_list, width='stretch'):
+                if selected_list:
+                    st.session_state["rename_mode"] = selected_list
+                    st.rerun()
+
+        with col3:
+            if st.button("Delete", disabled=not selected_list, width='stretch'):
+                if selected_list:
+                    del ticker_lists[selected_list]
+                    save_ticker_lists(ticker_lists)
+                    st.toast(f"Deleted '{selected_list}'")
+                    st.rerun()
+
+        # Rename mode
+        if st.session_state.get("rename_mode"):
+            old_name = st.session_state["rename_mode"]
+            st.markdown(f"**Renaming: '{old_name}'**")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                new_name = st.text_input("New Name", key="rename_input", label_visibility="collapsed", placeholder="Enter new name...")
+            with col2:
+                if st.button("✅", help="Confirm rename"):
+                    if new_name and new_name != old_name:
+                        if new_name in ticker_lists:
+                            st.sidebar.error("Name already exists")
+                        else:
+                            ticker_lists[new_name] = ticker_lists[old_name]
+                            del ticker_lists[old_name]
+                            save_ticker_lists(ticker_lists)
+                            st.session_state.pop("rename_mode")
+                            st.toast(f"Renamed to '{new_name}'")
+                            st.rerun()
+                    else:
+                        st.sidebar.error("Enter a different name")
+
+            if st.button("❌ Cancel"):
+                st.session_state.pop("rename_mode")
+                st.rerun()
+    else:
+        st.info("No saved lists yet. Save your current ticker list above!")
+
+st.sidebar.divider()
+
 # Ticker Input (Top Level)
 tickers_input = st.sidebar.text_area(
-    "Enter Tickers (comma separated)",
+    "Enter Tickers",
     key="tickers",
     height=100,
-    on_change=auto_save_settings
+    on_change=auto_save_settings,
+    placeholder="AAPL, MSFT, NVDA\nor one per line:\nAAPL\nMSFT\nNVDA"
 )
 
 # ETF Holdings Loader
@@ -445,9 +610,9 @@ sort_options = {
     "Perf 30min": "perfi30",
     "Perf 15min": "perfi15",
     "Perf 10min": "perfi10",
-    "SMA 20": "sma20",
-    "SMA 50": "sma50",
-    "Change": "change"
+    "SMA20": "sma20",
+    "Change": "change",
+    "Change from Open": "changefromopen"
 }
 
 # 2. Sorting Controls (Automatic with callbacks)
@@ -460,13 +625,112 @@ selected_sort_label = st.sidebar.selectbox(
 )
 
 sort_order_raw = st.sidebar.radio(
-    "Order", 
-    ["ASC", "DESC"], 
-    horizontal=True, 
+    "Order",
+    ["ASC", "DESC"],
+    horizontal=True,
     key="sort_order",
     on_change=lambda: [handle_sort_change(), auto_save_settings()],
     label_visibility="collapsed"
 )
+
+st.sidebar.divider()
+
+# Quick Metrics Table
+st.sidebar.markdown("### 📊 Quick View")
+
+# Get current tickers
+current_tickers = clean_tickers(st.session_state.get("tickers", ""))
+
+if current_tickers:
+    # Fetch metrics for the table
+    table_metrics = fetch_ticker_metrics(current_tickers)
+
+    def get_color_for_value(val_str):
+        """Return RGB color based on percentage value"""
+        if not val_str or val_str == "-":
+            return "rgba(255, 255, 255, 0)"
+        try:
+            val = float(val_str.replace('%', '').replace(',', ''))
+            if val < 0:
+                # Negative: Red shades (light red to dark red)
+                # Map -5% to -0% -> dark red to light red
+                intensity = min(abs(val) / 5.0, 1.0)  # Cap at 5% for max intensity
+                # Light red (255, 200, 200) to dark red (180, 0, 0)
+                r = int(180 + (255 - 180) * (1 - intensity))
+                g = int(0 + 200 * (1 - intensity))
+                b = int(0 + 200 * (1 - intensity))
+                return f"rgba({r}, {g}, {b}, 0.6)"
+            elif val > 0:
+                # Positive: Green shades (light green to dark green)
+                # Map 0% to 5% -> light green to dark green
+                intensity = min(val / 5.0, 1.0)  # Cap at 5% for max intensity
+                # Light green (200, 255, 200) to dark green (0, 120, 0)
+                r = int(200 * (1 - intensity))
+                g = int(200 + (120 - 200) * intensity)
+                b = int(200 * (1 - intensity))
+                return f"rgba({r}, {g}, {b}, 0.6)"
+            else:
+                return "rgba(255, 255, 255, 0)"
+        except:
+            return "rgba(255, 255, 255, 0)"
+
+    # Helper function to convert percentage string to float for sorting
+    def to_float(val_str):
+        if not val_str or val_str == "-":
+            return None
+        try:
+            return float(val_str.replace('%', '').replace(',', ''))
+        except:
+            return None
+
+    # Prepare data for the table with color styling
+    table_data = []
+    for ticker in current_tickers:
+        m = table_metrics.get(ticker, {})
+
+        perf_30m_str = m.get("perf_30m", "-")
+        perf_15m_str = m.get("perf_15m", "-")
+        perf_1m_str = m.get("perf_1m", "-")
+        change_str = m.get("change", "-")
+
+        # Add color indicators
+        def add_color_indicator(val_str):
+            if val_str == "-":
+                return val_str
+            try:
+                val = float(val_str.replace('%', '').replace(',', ''))
+                if val > 0:
+                    return f"🟢 {val_str}"
+                elif val < 0:
+                    return f"🔴 {val_str}"
+                else:
+                    return val_str
+            except:
+                return val_str
+
+        table_data.append({
+            "Ticker": ticker,
+            "30m": add_color_indicator(perf_30m_str),
+            "15m": add_color_indicator(perf_15m_str),
+            "1m": add_color_indicator(perf_1m_str),
+            "Chg": add_color_indicator(change_str),
+            "30m_val": to_float(perf_30m_str),
+        })
+
+    # Create a dataframe and sort
+    df = pd.DataFrame(table_data)
+    df_sorted = df.sort_values(by="30m_val", ascending=False, na_position='last')
+    df_display = df_sorted[["Ticker", "30m", "15m", "1m", "Chg"]]
+
+    # Display using native Streamlit dataframe
+    st.sidebar.dataframe(
+        df_display,
+        hide_index=True,
+        width='stretch',
+        height=min(len(table_data) * 35 + 38, 400)
+    )
+else:
+    st.sidebar.info("Enter tickers to see quick metrics")
 
 # Timeframe Options (shared across views)
 tf_options = {
@@ -507,15 +771,23 @@ with st.sidebar.expander("📊 Multi-Timeframe Settings", expanded=False):
 with st.sidebar.expander("⚙️ General Settings", expanded=False):
     show_metrics = st.toggle("Show Metrics Info Bar", value=saved_settings.get("show_metrics", True), key="show_metrics", on_change=auto_save_settings)
     auto_refresh = st.toggle("Enable Auto-Refresh", value=saved_settings.get("auto_refresh", True), key="auto_refresh", on_change=auto_save_settings)
-    refresh_interval = st.slider("Refresh Interval (seconds)", 5, 300, saved_settings.get("refresh_interval", 30), key="refresh_interval", on_change=auto_save_settings)
+    refresh_interval = st.segmented_control(
+        "Refresh Interval", 
+        options=[10, 15, 20, 30], 
+        selection_mode="single",
+        default=saved_settings.get("refresh_interval", 10), 
+        key="refresh_interval", 
+        on_change=auto_save_settings,
+        format_func=lambda x: f"{x}s"
+    )
     selected_chart_height = st.slider("Chart Height", 100, 1000, chart_height, key="chart_height", on_change=auto_save_settings)
     
     st.text_input(
-        "Finviz Cookie (Optional - for Elite)", 
-        value=saved_settings.get("finviz_cookie", ""), 
-        key="finviz_cookie", 
+        "Finviz Elite API Token",
+        value=saved_settings.get("finviz_cookie", ""),
+        key="finviz_cookie",
         type="password",
-        help="Paste your Finviz session cookie here to enable Elite sorting features.",
+        help="Enter your Finviz Elite API token to enable intraday performance metrics and Elite sorting features.",
         on_change=auto_save_settings
     )
 
@@ -553,18 +825,18 @@ else:
         p10 = m.get('perf_10m', '-')
         p15 = m.get('perf_15m', '-')
         p30 = m.get('perf_30m', '-')
-        rsi = m.get('rsi', '-')
         sma20 = m.get('sma20', '-')
-        sma50 = m.get('sma50', '-')
-        
+        price = m.get('price', '-')
+        change = m.get('change', '-')
+
         st.markdown(f"""
             <div class="metric-info-bar">
                 <div class="metric-item">10m: <span class="{get_color_class(p10)}">{p10}</span></div>
                 <div class="metric-item">15m: <span class="{get_color_class(p15)}">{p15}</span></div>
                 <div class="metric-item">30m: <span class="{get_color_class(p30)}">{p30}</span></div>
-                <div class="metric-item">RSI: <span class="neutral-val">{rsi}</span></div>
                 <div class="metric-item">SMA20: <span class="{get_color_class(sma20)}">{sma20}</span></div>
-                <div class="metric-item">SMA50: <span class="{get_color_class(sma50)}">{sma50}</span></div>
+                <div class="metric-item">Price: <span class="neutral-val">{price}</span></div>
+                <div class="metric-item">Change: <span class="{get_color_class(change)}">{change}</span></div>
             </div>
         """, unsafe_allow_html=True)
 

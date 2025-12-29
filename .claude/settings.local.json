@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test_updated_app.py:*)",
+      "Bash(python -c:*)",
+      "Bash(del test_perf_data.py test_elite_token.py find_column_ids.py find_intraday_columns.py test_updated_app.py test_sma20_update.py)"
+    ]
+  }
+}
