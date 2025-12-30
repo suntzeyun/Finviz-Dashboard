@@ -1,5 +1,5 @@
 {
-    "tickers": "PLTR,META,MSFT,TSLA,SMH,NVDA,SPY,AMD,QQQ,AAPL",
+    "tickers": "AMD,TSLA,PLTR,NVDA,SMH,QQQ,SPY,AAPL,META,MSFT",
     "timeframe": "3 Minutes",
     "num_cols": 3,
     "auto_refresh": true,
@@ -8,8 +8,8 @@
     "mtf_tf2": "15 Minutes",
     "mtf_tf3": "3 Minutes",
     "chart_height": 151,
-    "sort_by": "Perf 30min",
-    "sort_order": "ASC",
-    "finviz_cookie": "118220c5-0df3-45fa-befd-dd5bcf28e491",
+    "sort_by": "SMA20",
+    "sort_order": "DESC",
+    "finviz_cookie": "8ac51921-0c22-40a5-8d24-b4a4833da1a0",
     "show_metrics": true
 }
