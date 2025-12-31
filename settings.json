@@ -1,5 +1,5 @@
 {
-    "tickers": "AMD,TSLA,PLTR,NVDA,SMH,QQQ,SPY,AAPL,META,MSFT",
+    "tickers": "SPY\nQQQ\nSMH\nXLC\nXLK\nXLY\nXLI\nXLP\nXLRE\nXLU\nXLV\nXOP\n\nIWM\nXRT\nXLB\nXLE\nXLF\nFXI\nKWEB\nKRE\nIBIT\nDIA\nVTI\nITOT\nUSO\nUNG\nGLD\nIAU\nSLV\nCPER\nDBA\nEFA\nVEA\nEEM\nVWO\nVGK\nEZU\nEWJ\nMCHI\nEWC\nEWG\nEWU\nINDA\nEWA\nEWZ\nIBB\nKBE\nITB\nCIBR\nSKYY\nICLN\nPPA\nXTN\nIHF\nIGV\nIBUY\nBND\nAGG\nTLT\nIEF\nSHY\nSGOV\nBIL\nVCIT\nHYG\nJNK\nMUB\nMBB\nBNDX\nVIX\nVXX\nUVXY\nUUP\nFXE\nFXY\n",
     "timeframe": "3 Minutes",
     "num_cols": 3,
     "auto_refresh": true,
