@@ -562,3 +562,79 @@ Create a high-performance, minimalist Streamlit dashboard for monitoring multipl
 - **Persistence**: `settings.json`, `ticker_lists.json`, `trading_journal.json`
 - **Performance**: Session-state caching, concurrent HTTP requests, optimized loops, lazy image loading
 - **Launch Strategy**: `run.bat` for automatic port assignment (8999) and browser launch.
+
+---
+
+## 📅 Session Log: January 12, 2026
+
+### 🔒 Password Protection Implementation
+- **Login Screen Added**: Implemented password-protected login page that blocks access to the dashboard until the correct password is entered.
+- **Session State Authentication**: Used `st.session_state` to track login status across page refreshes.
+- **Password Storage**: Password stored directly in `check_password()` function (hardcoded for simplicity).
+- **User Experience**: Clean login UI with title, password input field, and error messages for incorrect attempts.
+
+### 🛠️ Technical Implementation
+- Added `check_password()` function at the top of `streamlit_app.py` (after imports and `st.set_page_config`).
+- Function uses nested `password_entered()` callback for Streamlit's `on_change` event.
+- Session state keys: `password` (temporary), `password_correct` (persistent).
+- `st.stop()` used to halt execution when not authenticated.
+
+### ☁️ Streamlit Community Cloud Deployment
+- **Public Hosting**: Successfully deployed the dashboard to Streamlit Community Cloud.
+- **Live URL**: `https://myfinviz-dashboard.streamlit.app/`
+- **GitHub Integration**: App automatically updates when code is pushed to `suntzeyun/Finviz-Dashboard` repository.
+
+### 🐛 Deployment Bug Fixes
+
+**Issue 1: `st.set_page_config` Order**
+- **Problem**: App crashed on Cloud with "connection refused" error.
+- **Root Cause**: `st.set_page_config()` must be the very first Streamlit command executed. Original placement was after several function definitions that contained `@st.cache_data` decorators.
+- **Solution**: Moved `st.set_page_config()` to immediately after imports (line 18), before any function definitions.
+
+**Issue 2: `.streamlit/config.toml` Settings**
+- **Problem**: App still crashed after fixing the page config order.
+- **Root Cause**: Local development config file had:
+  - `port = 8999` (Cloud expects default port 8501)
+  - `headless = false` (Cloud requires headless mode)
+- **Solution**: Updated `.streamlit/config.toml` to use Cloud-compatible settings:
+  ```toml
+  [server]
+  headless = true
+  enableCORS = false
+  enableXsrfProtection = false
+  ```
+
+### 📦 Dependency Updates
+- **Added `pandas` to `requirements.txt`**: Discovered missing dependency that was causing import errors.
+- **Full `requirements.txt`**:
+  - streamlit
+  - requests
+  - beautifulsoup4
+  - feedparser
+  - pytz
+  - pandas
+
+### 📋 Deployment Checklist (For Future Reference)
+1. ✅ Ensure `st.set_page_config()` is the FIRST Streamlit command (right after imports).
+2. ✅ Remove hardcoded port from `.streamlit/config.toml` (let Cloud use default 8501).
+3. ✅ Set `headless = true` in config for Cloud deployment.
+4. ✅ All dependencies listed in `requirements.txt`.
+5. ✅ Push all changes to GitHub before deploying.
+6. ✅ Grant Streamlit Cloud access to private repositories if needed (via GitHub OAuth settings).
+
+### 🎯 Current Status
+- ✅ Dashboard live and accessible via `https://myfinviz-dashboard.streamlit.app/`
+- ✅ Password protection active (password: configured in code)
+- ✅ Auto-deploys on every `git push` to main branch
+- ✅ All features functional on Cloud
+
+---
+
+## 🏗️ Architecture Note
+- **Frontend**: Streamlit (Python)
+- **Data Source**: Finviz Export API (Elite) / Scraping (Free), Yahoo Finance (ETF Holdings), Yahoo Finance RSS (News)
+- **Persistence**: `settings.json`, `ticker_lists.json`, `trading_journal.json`
+- **Performance**: Session-state caching, concurrent HTTP requests, optimized loops, lazy image loading
+- **Hosting**: Streamlit Community Cloud (auto-deploy from GitHub)
+- **Security**: Password-protected login page
+- **Launch Strategy (Local)**: `run.bat` for automatic port assignment (8999) and browser launch.

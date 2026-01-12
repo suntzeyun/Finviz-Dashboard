@@ -28,6 +28,9 @@ def check_password():
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
+        # Check if password key exists before accessing
+        if "password" not in st.session_state:
+            return
         # The password is currently stored right here:
         if st.session_state["password"] == "417271":
             st.session_state["password_correct"] = True
