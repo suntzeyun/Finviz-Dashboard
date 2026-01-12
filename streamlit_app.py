@@ -827,14 +827,6 @@ def fetch_ticker_rss_news(ticker):
 
 
 
-# Load initial settings
-saved_settings = load_settings()
-chart_height = saved_settings.get("chart_height", 350)
-
-# Check password before proceeding
-if not check_password():
-    st.stop()
-
 # --- Page Configuration ---
 st.set_page_config(
     page_title="Finviz Free - Realtime Chart Dashboard",
@@ -842,6 +834,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Load initial settings
+saved_settings = load_settings()
+chart_height = saved_settings.get("chart_height", 350)
+
+# Check password before proceeding
+if not check_password():
+    st.stop()
 
 # --- Custom CSS for Premium Look ---
 st.markdown(f"""
