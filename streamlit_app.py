@@ -15,6 +15,38 @@ SETTINGS_FILE = "settings.json"
 TICKER_LISTS_FILE = "ticker_lists.json"
 TRADING_JOURNAL_FILE = "trading_journal.json"
 
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        # The password is currently stored right here:
+        if st.session_state["password"] == "417271":
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show input for password.
+        st.title("🔒 Finviz Dashboard Login")
+        st.text_input(
+            "Password", type="password", on_change=password_entered, key="password"
+        )
+        st.info("Please enter the password to access the dashboard.")
+        return False
+    elif not st.session_state["password_correct"]:
+        # Password not correct, show input + error.
+        st.title("🔒 Finviz Dashboard Login")
+        st.text_input(
+            "Password", type="password", on_change=password_entered, key="password"
+        )
+        st.error("😕 Password incorrect")
+        return False
+    else:
+        # Password correct.
+        return True
+
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -799,6 +831,10 @@ def fetch_ticker_rss_news(ticker):
 saved_settings = load_settings()
 chart_height = saved_settings.get("chart_height", 350)
 
+# Check password before proceeding
+if not check_password():
+    st.stop()
+
 # --- Page Configuration ---
 st.set_page_config(
     page_title="Finviz Free - Realtime Chart Dashboard",
@@ -841,9 +877,9 @@ st.markdown(f"""
     }}
     
     /* Hide Streamlit elements for a cleaner look */
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
-    header {{visibility: hidden;}}
+    #MainMenu {{ visibility: hidden; }}
+    footer {{ visibility: hidden; }}
+    header {{ visibility: hidden; }}
     
     /* Compact Info Bar Styling */
     .metric-info-bar {{
