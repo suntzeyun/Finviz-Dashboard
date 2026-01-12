@@ -15,6 +15,14 @@ SETTINGS_FILE = "settings.json"
 TICKER_LISTS_FILE = "ticker_lists.json"
 TRADING_JOURNAL_FILE = "trading_journal.json"
 
+# --- Page Configuration MUST BE FIRST ---
+st.set_page_config(
+    page_title="Finviz Free - Realtime Chart Dashboard",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
 def check_password():
     """Returns `True` if the user had the correct password."""
 
@@ -828,12 +836,6 @@ def fetch_ticker_rss_news(ticker):
 
 
 # --- Page Configuration ---
-st.set_page_config(
-    page_title="Finviz Free - Realtime Chart Dashboard",
-    page_icon="📈",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
 # Load initial settings
 saved_settings = load_settings()
