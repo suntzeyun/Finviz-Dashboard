@@ -1,0 +1,31 @@
+# Credentials and tokens
+run_public.bat
+
+# Settings files with potential sensitive data
+settings.json
+
+# Local data files
+ticker_lists.json
+trading_journal.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

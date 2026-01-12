@@ -40,7 +40,7 @@
     "ticker_view_search": "",
     "ticker_view_timeframe": "Daily",
     "ticker_view_font_size": "Medium",
-    "ticker_view_filter_mode": "Changes With Major News",
+    "ticker_view_filter_mode": "Enter Manually",
     "ticker_view_sort_order": "Desc (Top Gainers)",
     "finviz_cookie": "8ac51921-0c22-40a5-8d24-b4a4833da1a0",
     "show_metrics": true,
