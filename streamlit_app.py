@@ -1351,12 +1351,12 @@ with st.sidebar.expander("⚙️ General Settings", expanded=False):
     auto_refresh = st.toggle("Enable Auto-Refresh", value=saved_settings.get("auto_refresh", True), key="auto_refresh", on_change=auto_save_settings)
     refresh_interval = st.segmented_control(
         "Refresh Interval", 
-        options=[10, 15, 20, 30], 
+        options=[10, 15, 20, 30, 300, 600], 
         selection_mode="single",
         default=saved_settings.get("refresh_interval", 10), 
         key="refresh_interval", 
         on_change=auto_save_settings,
-        format_func=lambda x: f"{x}s"
+        format_func=lambda x: f"{x}s" if x < 60 else f"{x//60}m"
     )
     selected_chart_height = st.slider("Chart Height", 100, 1000, chart_height, key="chart_height", on_change=auto_save_settings)
     
@@ -1447,6 +1447,10 @@ else:
     # but we save the state for future use when they add it
 
     with tab0:
+        # Show last refresh time
+        last_refresh_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+        st.caption(f"🕐 Last Refreshed: {last_refresh_time}  (Refreshes every {refresh_interval}s)")
+        
         for ticker in index_tickers:
             cols = st.columns(3)
             # Column 1
@@ -1537,6 +1541,10 @@ else:
             st.warning("⚠️ Could not load calendar data.")
 
     with tab1:
+        # Show last refresh time
+        last_refresh_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+        st.caption(f"🕐 Last Refreshed: {last_refresh_time}  (Refreshes every {refresh_interval}s)")
+        
         # Create Grid
         cols = st.columns(num_cols)
         for i, ticker in enumerate(ticker_list):
@@ -1548,6 +1556,10 @@ else:
                     render_info_bar(ticker)
 
     with tab2:
+        # Show last refresh time
+        last_refresh_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+        st.caption(f"🕐 Last Refreshed: {last_refresh_time}  (Refreshes every {refresh_interval}s)")
+        
         for ticker in ticker_list:
             cols = st.columns(3)
             # Column 1
@@ -2711,30 +2723,20 @@ else:
 
 # --- Smart Auto-Refresh Logic ---
 # Only auto-refresh when NOT on news tabs to avoid interrupting reading
-if auto_refresh:
-    # Track which tab is active using session state
-    # Streamlit doesn't directly expose active tab, so we use a workaround
-    # We'll only refresh if the user hasn't interacted with news-specific filters recently
+# Use session state values to ensure we get the correct user settings
+if st.session_state.get("auto_refresh", False):
+    # Check if user is likely on a news tab by looking at news-specific session keys
+    # Note: We check for widgets that only exist when user interacts with news tabs
+    on_finviz_news = 'news_search' in st.session_state and st.session_state.get('news_search', '')
+    on_rss_news = 'rss_news_search' in st.session_state and st.session_state.get('rss_news_search', '')
     
-    # Check if user is likely on a news tab or Trading Journal by Ticker by looking at session keys
-    on_finviz_news = 'news_search' in st.session_state or 'news_source_filter' in st.session_state
-    on_rss_news = 'rss_news_search' in st.session_state or 'rss_source_filter' in st.session_state
-    on_ticker_journal = 'ticker_view_filter_mode' in st.session_state or 'ticker_view_major_news_selection' in st.session_state
-    
-    # Different refresh intervals based on which tab is active
-    if on_ticker_journal:
-        # Trading Journal by Ticker - 30 minute refresh for daily planning
-        time.sleep(1800)  # 30 minutes
-        st.rerun()
-    elif on_finviz_news or on_rss_news:
-        # On news tabs, use a longer refresh interval (5 minutes) to be less disruptive
+    if on_finviz_news or on_rss_news:
+        # On news tabs with active search, use a longer refresh interval (5 minutes)
         time.sleep(300)  # 5 minutes
         st.rerun()
-    elif 'cal_date_range' in st.session_state or 'cal_countries' in st.session_state:
-        # Economic Calendar - 1 hour refresh since forex calendar doesn't change often
-        time.sleep(3600)  # 1 hour
-        st.rerun()
     else:
-        # Default refresh interval for other tabs
-        time.sleep(refresh_interval)
+        # Default refresh interval for chart tabs and other views
+        # Get the refresh interval from session state
+        interval = st.session_state.get("refresh_interval", 10)
+        time.sleep(interval)
         st.rerun()

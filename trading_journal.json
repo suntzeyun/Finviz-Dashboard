@@ -3,79 +3,79 @@
         "list_name": "Intraday",
         "ticker": "AMZN",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.662659"
+        "last_updated": "2026-01-13T10:22:01.224846"
     },
     "Intraday_MSFT": {
         "list_name": "Intraday",
         "ticker": "MSFT",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.664743"
+        "last_updated": "2026-01-13T10:22:01.228574"
     },
     "Intraday_GOOGL": {
         "list_name": "Intraday",
         "ticker": "GOOGL",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.667808"
+        "last_updated": "2026-01-13T10:22:01.232154"
     },
     "Intraday_XLC": {
         "list_name": "Intraday",
         "ticker": "XLC",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.669383"
+        "last_updated": "2026-01-13T10:22:01.235337"
     },
     "Intraday_QQQ": {
         "list_name": "Intraday",
         "ticker": "QQQ",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.671115"
+        "last_updated": "2026-01-13T10:22:01.238376"
     },
     "Intraday_NFLX": {
         "list_name": "Intraday",
         "ticker": "NFLX",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.672632"
+        "last_updated": "2026-01-13T10:22:01.241372"
     },
     "Intraday_SPY": {
         "list_name": "Intraday",
         "ticker": "SPY",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.674217"
+        "last_updated": "2026-01-13T10:22:01.244422"
     },
     "Intraday_TSLA": {
         "list_name": "Intraday",
         "ticker": "TSLA",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.675898"
+        "last_updated": "2026-01-13T10:22:01.247690"
     },
     "Intraday_NVDA": {
         "list_name": "Intraday",
         "ticker": "NVDA",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.677413"
+        "last_updated": "2026-01-13T10:22:01.251448"
     },
     "Intraday_META": {
         "list_name": "Intraday",
         "ticker": "META",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.679364"
+        "last_updated": "2026-01-13T10:22:01.254709"
     },
     "Intraday_AVGO": {
         "list_name": "Intraday",
         "ticker": "AVGO",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.680914"
+        "last_updated": "2026-01-13T10:22:01.257684"
     },
     "Intraday_SMH": {
         "list_name": "Intraday",
         "ticker": "SMH",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.682619"
+        "last_updated": "2026-01-13T10:22:01.261778"
     },
     "Intraday_AAPL": {
         "list_name": "Intraday",
         "ticker": "AAPL",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.687613"
+        "last_updated": "2026-01-13T10:22:01.265479"
     },
     "Venezuela and Greenland Theme - US January 2026_CVX": {
         "list_name": "Venezuela and Greenland Theme - US January 2026",
@@ -141,7 +141,7 @@
         "list_name": "Intraday",
         "ticker": "_LIST_",
         "journal": "",
-        "last_updated": "2026-01-10T12:39:49.631811"
+        "last_updated": "2026-01-13T10:22:01.221035"
     },
     "Venezuela and Greenland Theme - US January 2026_GLD": {
         "list_name": "Venezuela and Greenland Theme - US January 2026",
@@ -196,5 +196,65 @@
         "ticker": "DHI",
         "journal": "",
         "last_updated": "2026-01-12T11:23:43.055981"
+    },
+    "_LIST_Theme: US-Tehran situation": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "_LIST_",
+        "journal": "In 2026, the market is reacting to the US-Tehran situation with a clear \"war footing\" mentality, though tempered by a global oil surplus. The highlights are primarily in the Defense and Energy sectors, with a significant shift toward European defense and diversified ETFs.",
+        "last_updated": "2026-01-13T10:23:10.989888"
+    },
+    "Theme: US-Tehran situation_NOC": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "NOC",
+        "journal": "Northrop Grumman (NOC): Up nearly 7% in recent trading. Investors are eyeing its missile defense systems as particularly critical for potential Iranian escalations.",
+        "last_updated": "2026-01-13T10:52:46.257685"
+    },
+    "Theme: US-Tehran situation_GD": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "GD",
+        "journal": "General Dynamics (GD): Up 3.5%. Its strength in ISR (Intelligence, Surveillance, and Reconnaissance) solutions and naval assets makes it a key player in monitoring the Persian Gulf.",
+        "last_updated": "2026-01-13T10:53:14.649797"
+    },
+    "Theme: US-Tehran situation_CVX": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "CVX",
+        "journal": "Interestingly, oil prices are not skyrocketing as they did in previous decades. This is due to a \"super-glut\" in 2026\u2014record production in the U.S., Brazil, and Guyana.\n\n\nChevron (CVX): A top performer, rising 5.5% in the first week of January. Its unique position with licenses in Venezuela (where the U.S. is also active) makes it a strategic hedge.",
+        "last_updated": "2026-01-13T10:53:44.379921"
+    },
+    "Theme: US-Tehran situation_XOM": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "XOM",
+        "journal": "ExxonMobil (XOM): Saw a 2.5% initial jump on Iran headlines, though it remains sensitive to price fluctuations as the market absorbs the supply surplus.",
+        "last_updated": "2026-01-13T10:53:53.717392"
+    },
+    "Theme: US-Tehran situation_UPS": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "UPS",
+        "journal": "The \"Shadow Fleet\" Risk: Companies involved in shipping and logistics (like FedEx or UPS) are under pressure due to fuel cost volatility and new 25% tariffs on North American neighbors.",
+        "last_updated": "2026-01-13T10:54:13.757330"
+    },
+    "Theme: US-Tehran situation_FDX": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "FDX",
+        "journal": "The \"Shadow Fleet\" Risk: Companies involved in shipping and logistics (like FedEx or UPS) are under pressure due to fuel cost volatility and new 25% tariffs on North American neighbors.",
+        "last_updated": "2026-01-13T10:54:23.365518"
+    },
+    "Theme: US-Tehran situation_SHLD": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "SHLD",
+        "journal": "+8.1% since Dec 28; focuses on high-tech/AI defense",
+        "last_updated": "2026-01-13T10:54:30.032748"
+    },
+    "Theme: US-Tehran situation_PPA": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "PPA",
+        "journal": "+5.8% since Dec 28",
+        "last_updated": "2026-01-13T10:54:38.006907"
+    },
+    "Theme: US-Tehran situation_GLD": {
+        "list_name": "Theme: US-Tehran situation",
+        "ticker": "GLD",
+        "journal": "Reaching fresh highs as a hedge against geopolitical \"black swans\"",
+        "last_updated": "2026-01-13T10:54:43.311455"
     }
 }

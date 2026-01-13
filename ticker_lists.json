@@ -9,5 +9,8 @@
     "Crypto Currency": "TRX,@BTCUSD,@ETHUSD,@SOLUSD,@BNBUSD,@DOGEUSD,@ADAUSD,@SUIUSD",
     "Crypto Currency - ETF": "ETHA,IBIT,GBTC",
     "GOLD & SLV": "GLD, SLV",
-    "Venezuela and Greenland Theme - US January 2026": "HAL,NOC,CVX,GLD,GGG,IBIT,XOM,SLB,VLO,PSX,RTX,MP,CRML,WFRD"
+    "Venezuela and Greenland Theme - US January 2026": "HAL,NOC,CVX,GLD,GGG,IBIT,XOM,SLB,VLO,PSX,RTX,MP,CRML,WFRD",
+    "Theme: US-Tehran situation": "SHLD,CVX,FDX,GD,ITA,PPA,XOM,LMT,GLD,NOC,UPS",
+    "Sun Tze Yun & Jo- Portfolio": "QQQ\nSPY\nMA\nAMZN\nSPGI\nNVDA\nCDNS\nISRG\nARM\nTEAM\nFTNT\nETHA\nIBIT\nORCL\nPLTR\nCRM\nQQQ\nNVDA\nSMH\nAVGO\nGOOGL\nNVDA\nQQQ\nTSM\nXLC\nGOOGL\nTSM\nAVGO\nSPY\nXLC\nMETA\nAAPL\nQQQ\nETHA\nSPGI\nCRM\nORCL\nFTNT\nPLTR\nAMZN\nGOOGL\nAVGO",
+    "Sun Tze Yun & Jo- Buy List Monitoring": "APLD,SHLD\nNFLX\nNOW\nCMG\nCPRT\nADBE\nLULU\nFTNT\nTEAM\nARM\nXLY"
 }

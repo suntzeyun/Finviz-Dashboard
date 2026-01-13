@@ -630,6 +630,37 @@ Create a high-performance, minimalist Streamlit dashboard for monitoring multipl
 
 ---
 
+## 📅 Session Log: January 13, 2026
+
+### 🐛 Auto-Refresh Bug Fix
+
+**Problem Encountered:**
+- Auto-refresh was always running regardless of the "Enable Auto-Refresh" toggle setting
+- Changing the refresh interval duration had no effect
+- Dashboard kept refreshing even when auto-refresh was disabled or set to longer intervals
+
+**Root Cause:**
+- The auto-refresh logic at the bottom of `streamlit_app.py` (lines 2726 and 2738) was using local variables `auto_refresh` and `refresh_interval` instead of session state values
+- These local variables were assigned from widget return values inside a collapsed expander
+- When the expander was collapsed, the variables didn't reflect the actual user settings
+
+**Solution Implemented:**
+- Changed line 2726 from `if auto_refresh:` to `if st.session_state.get("auto_refresh", False):`
+- Changed line 2738 from `time.sleep(refresh_interval)` to use `st.session_state.get("refresh_interval", 10)`
+- Added explanatory comments about using session state values
+
+### 🛠️ Technical Changes
+- Updated auto-refresh check to use `st.session_state.get("auto_refresh", False)`
+- Updated refresh interval to use `interval = st.session_state.get("refresh_interval", 10)`
+- Added comments explaining the importance of using session state for persistent settings
+
+### ✅ Result
+- Auto-refresh toggle now correctly enables/disables automatic page refreshes
+- Refresh interval selector (10s, 15s, 20s, 30s) now properly controls the refresh timing
+- Settings persist correctly regardless of sidebar expander state
+
+---
+
 ## 🏗️ Architecture Note
 - **Frontend**: Streamlit (Python)
 - **Data Source**: Finviz Export API (Elite) / Scraping (Free), Yahoo Finance (ETF Holdings), Yahoo Finance RSS (News)
